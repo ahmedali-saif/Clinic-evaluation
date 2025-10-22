@@ -121,7 +121,7 @@
     th, td {
       padding: 10px 12px;
       border-bottom: 1px solid var(--border);
-      text-align: left;
+      text-align: center; /* ✅ جميع البيانات والعناوين في المنتصف */
     }
 
     th {
@@ -190,11 +190,6 @@
 
     @keyframes spin {
       to { transform: rotate(360deg); }
-    }
-
-    /* ✅ جعل العمود الأول في منتصف الخلية */
-    td:first-child {
-      text-align: center;
     }
   </style>
 </head>
@@ -350,3 +345,4 @@ loadSheet();
 </script>
 </body>
 </html>
+
