@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>بحث في Google Sheets</title>
+  <style>
+    :root {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      --bg: #fffaf5;
+      --card: #ffffff;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --border: #f1e3d0;
+      --text: #3b2f1b;
+      --muted: #7c6c57;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #f5e6d3;
+      position: relative;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: var(--accent);
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    .small {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    input, select, button {
+      padding: 10px 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      transition: all 0.2s ease;
+    }
+
+    input {
+      flex: 1;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(245,158,11,0.3);
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(245,158,11,0.3);
+    }
+
+    select {
+      background-color: #fffaf5;
+    }
+
+    .meta {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: #fff3e0;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    tr:nth-child(even) td {
+      background: #fffaf3;
+    }
+
+    tr:hover td {
+      background: #fff0d9;
+    }
+
+    tr.no-data td {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    mark {
+      background: #ffe69b;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    code {
+      background: #fff3e0;
+      color: #a16207;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* مؤشر التحميل */
+    .loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 250, 245, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .loader.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 6px solid #fcdca6;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body dir="rtl">
+  <div class="container">
+    <div class="loader" id="loader"><div class="spinner"></div></div>
+
+    <h1>بحث داخل Google Sheets</h1>
+    <p class="small">ستبحث الصفحة في جدول البيانات التالي (الافتراضي): 
+      <code>1A4qu3FlUjr5xvhdHEfcHhyfNYDwGIzON9MAC-SoyM7Q</code>
+    </p>
+
+    <div class="search-row">
+      <input id="query" placeholder="اكتب مصطلح البحث هنا..." />
+      <button id="reload">🔄 تحميل / إعادة تحميل</button>
+      <select id="mode" title="طريقة البحث">
+        <option value="contains">يحتوي (افتراضي)</option>
+        <option value="starts">يبدأ بـ</option>
+        <option value="exact">مطابقة كاملة</option>
+      </select>
+    </div>
+
+    <div class="meta">
+      <span id="status">لم يتم تحميل البيانات بعد.</span>
+    </div>
+
+    <div style="overflow:auto;max-height:60vh;border-radius:8px;">
+      <table id="results">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const SHEET_ID = '1A4qu3FlUjr5xvhdHEfcHhyfNYDwGIzON9MAC-SoyM7Q';
+const GID = '0'; 
+
+const queryEl = document.getElementById('query');
+const reloadBtn = document.getElementById('reload');
+const statusEl = document.getElementById('status');
+const thead = document.getElementById('thead');
+const tbody = document.getElementById('tbody');
+const modeEl = document.getElementById('mode');
+const loader = document.getElementById('loader');
+
+let data = [];
+let headers = [];
+
+function showLoader(show) {
+  if (show) loader.classList.add('active');
+  else loader.classList.remove('active');
+}
+
+function csvParse(text){
+  const rows = [];
+  const lines = text.split(/\r\n|\n|\r/);
+  for(const line of lines){
+    if(line.trim()==='') continue;
+    const row = [];
+    let cur = '';
+    let inQuotes = false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(ch === '"'){
+        if(inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if(ch === ',' && !inQuotes){
+        row.push(cur);
+        cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    row.push(cur);
+    rows.push(row);
+  }
+  return rows;
+}
+
+async function loadSheet(){
+  showLoader(true);
+  statusEl.textContent = 'جارٍ التحميل...';
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+  data = [];
+  headers = [];
+  try{
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('لم يتم الوصول إلى الورقة. هل هي "مشارَكة" للعامة؟');
+    const text = await res.text();
+    const rows = csvParse(text);
+    if(rows.length === 0) throw new Error('الورقة فارغة.');
+    headers = rows[0];
+    data = rows.slice(1);
+    renderTable(headers, data);
+    statusEl.textContent = `✅ تمّ التحميل — ${data.length} صفوف.`;
+  }catch(err){
+    statusEl.textContent = '⚠️ خطأ: ' + err.message;
+  }finally{
+    showLoader(false);
+  }
+}
+
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>\"]+/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]||c));
+}
+
+function highlight(text, term){
+  if(!term) return escapeHtml(text);
+  const t = term.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&');
+  const re = new RegExp(t,'gi');
+  return escapeHtml(text).replace(re, m=>`<mark>${m}</mark>`);
+}
+
+function renderTable(headers, rows, filterTerm){
+  thead.innerHTML = '<tr>' + headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
+  tbody.innerHTML = '';
+  const term = (filterTerm||'').trim();
+  const mode = modeEl.value;
+  const termLower = term.toLowerCase();
+  const out = [];
+  for(const r of rows){
+    const rowText = r.join(' \t ');
+    const hay = rowText.toLowerCase();
+    let match = false;
+    if(!term){ match = true; }
+    else if(mode === 'contains'){ match = hay.includes(termLower); }
+    else if(mode === 'starts'){ match = r.some(c => (c||'').toString().toLowerCase().startsWith(termLower)); }
+    else if(mode === 'exact'){ match = r.some(c => (c||'').toString().toLowerCase() === termLower); }
+    if(match){ out.push(r); }
+  }
+  if(out.length === 0){
+    tbody.innerHTML = '<tr class="no-data"><td colspan="'+headers.length+'">لا توجد نتائج.</td></tr>';
+    return;
+  }
+  const rowsHtml = out.map(r=>'<tr>'+ r.map(c=>`<td>${highlight(c, term)}</td>`).join('') +'</tr>').join('\n');
+  tbody.innerHTML = rowsHtml;
+}
+
+let timer;
+queryEl.addEventListener('input', ()=>{
+  clearTimeout(timer);
+  timer = setTimeout(()=>{
+    renderTable(headers, data, queryEl.value);
+  }, 250);
+});
+
+reloadBtn.addEventListener('click', ()=> loadSheet());
+loadSheet();
+</script>
+</body>
+</html>
+
