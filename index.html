@@ -121,13 +121,21 @@
     th, td {
       padding: 10px 12px;
       border-bottom: 1px solid var(--border);
-      text-align: center; /* ✅ جميع البيانات والعناوين في المنتصف */
+      text-align: center;
     }
 
     th {
       background: #fff3e0;
       font-weight: 600;
       color: var(--text);
+    }
+
+    /* ✅ تثبيت الصف العلوي */
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #fff3e0;
+      z-index: 2;
     }
 
     tr:nth-child(even) td {
@@ -345,4 +353,3 @@ loadSheet();
 </script>
 </body>
 </html>
-
