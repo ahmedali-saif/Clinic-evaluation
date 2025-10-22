@@ -111,7 +111,8 @@
 
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       background: white;
       border-radius: 10px;
       overflow: hidden;
@@ -134,14 +135,13 @@
     thead {
       position: sticky;
       top: 0;
-      z-index: 3;
+      z-index: 10;
+      background: #fff3e0;
     }
 
     thead th {
-      position: sticky;
-      top: 0;
       background: #fff3e0;
-      z-index: 2;
+      position: relative;
     }
 
     tr:nth-child(even) td {
